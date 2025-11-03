@@ -16,9 +16,19 @@ export default function UploadPage() {
     try {
       const response = await documentApi.upload(file);
       navigate(`/conversation/${response.document_id}`);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Upload error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to upload document. Please try again.');
+      
+      // Extract error message from axios response
+      let errorMessage = 'Failed to upload document. Please try again.';
+      
+      if (err.response?.data?.detail) {
+        errorMessage = err.response.data.detail;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
       setIsUploading(false);
     }
   };
@@ -36,9 +46,25 @@ export default function UploadPage() {
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start space-x-3">
-            <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5" />
-            <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <div className="flex items-start space-x-3">
+              <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm text-red-800 dark:text-red-200 font-medium mb-1">
+                  {error.includes('no placeholders') 
+                    ? 'No Placeholders Found' 
+                    : error.includes('Multiple tool calls') || error.includes('try uploading')
+                    ? 'Upload Error'
+                    : 'Error'}
+                </p>
+                <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+                {error.includes('try uploading') && (
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-2">
+                    Please check your document and try uploading again.
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
