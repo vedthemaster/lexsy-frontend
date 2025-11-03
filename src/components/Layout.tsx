@@ -16,7 +16,7 @@ export default function Layout({ children }: LayoutProps) {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                Lexy
+                Lexsy
               </h1>
               <p className="text-sm text-slate-600 dark:text-slate-400">
                 Legal Document Assistant
@@ -30,13 +30,13 @@ export default function Layout({ children }: LayoutProps) {
         {children}
       </main>
       
-      <footer className="mt-auto border-t border-slate-200 dark:border-slate-700">
+      {/* <footer className="mt-auto border-t border-slate-200 dark:border-slate-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <p className="text-center text-sm text-slate-600 dark:text-slate-400">
-            © 2024 Lexy. Powered by AI.
+            © 2024 Lexsy. Powered by AI.
           </p>
         </div>
-      </footer>
+      </footer> */}
     </div>
   );
 }

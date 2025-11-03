@@ -37,3 +37,46 @@ body {
   }
 }
 
+/* Document Preview Styles */
+.document-content {
+  word-wrap: break-word;
+  text-align: left;
+}
+
+.document-content p {
+  margin: 0 0 6pt 0;
+  text-align: left;
+}
+
+.document-content h1,
+.document-content h2,
+.document-content h3,
+.document-content h4,
+.document-content h5,
+.document-content h6 {
+  margin: 12pt 0 6pt 0;
+  font-weight: bold;
+  text-align: left;
+}
+
+.document-content ul,
+.document-content ol {
+  margin: 0 0 6pt 0;
+  padding-left: 40pt;
+  text-align: left;
+}
+
+.document-content table {
+  border-collapse: collapse;
+  margin: 12pt 0;
+  width: 100%;
+}
+
+.document-content table td,
+.document-content table th {
+  border: 1pt solid #000000;
+  padding: 6pt;
+  text-align: left;
+  vertical-align: top;
+}
+

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MessageCircle, Send, Download, Loader, CheckCircle, ArrowLeft } from 'lucide-react';
 import { placeholderApi, documentApi } from '../services/api';
+import DocumentPreview from '../components/DocumentPreview';
 import type { ConversationMessage } from '../types';
 
 export default function ConversationPage() {
@@ -16,8 +17,11 @@ export default function ConversationPage() {
   const [allFilled, setAllFilled] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [documentPreview, setDocumentPreview] = useState<Blob | null>(null);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -33,6 +37,30 @@ export default function ConversationPage() {
     }
   }, [documentId]);
 
+    useEffect(() => {
+    if (allFilled && documentId && !documentPreview && !isLoadingPreview) {     
+      loadDocumentPreview();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allFilled, documentId]);
+
+  const loadDocumentPreview = async () => {
+    if (!documentId) return;
+
+    setIsLoadingPreview(true);
+    setError(null);
+
+    try {
+      const blob = await documentApi.getPreview({ document_id: documentId });   
+      setDocumentPreview(blob);
+    } catch (err) {
+      console.error('Preview load error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load document preview. Please try again.');                                                      
+    } finally {
+      setIsLoadingPreview(false);
+    }
+  };
+
   const startSession = async () => {
     if (!documentId) return;
     
@@ -44,6 +72,16 @@ export default function ConversationPage() {
       setThreadId(response.thread_id);
       setConversation(response.conversation);
       setAllFilled(response.all_filled);
+      
+      // If all placeholders are already filled, load preview immediately
+      if (response.all_filled && documentId) {
+        loadDocumentPreview();
+      } else {
+        // Focus input when session starts if not all filled
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 100);
+      }
     } catch (err) {
       console.error('Start session error:', err);
       setError(err instanceof Error ? err.message : 'Failed to start session. Please try again.');
@@ -73,10 +111,27 @@ export default function ConversationPage() {
       });
 
       setConversation(response.conversation);
+      const wasFilled = allFilled;
       setAllFilled(response.all_filled);
+      
+      // If all placeholders just became filled, trigger preview load
+      if (!wasFilled && response.all_filled && documentId && !documentPreview && !isLoadingPreview) {
+        loadDocumentPreview();
+      }
+      
+      // Focus input after processing if not all filled
+      if (!response.all_filled) {
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 100);
+      }
     } catch (err) {
       console.error('Send message error:', err);
       setError(err instanceof Error ? err.message : 'Failed to send message. Please try again.');
+      // Focus input even on error
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
     } finally {
       setIsLoading(false);
     }
@@ -105,7 +160,7 @@ export default function ConversationPage() {
       setError(err instanceof Error ? err.message : 'Failed to generate document. Please try again.');
     } finally {
       setIsGenerating(false);
-    }
+        }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -128,6 +183,66 @@ export default function ConversationPage() {
     );
   }
 
+  // If all filled, show only preview
+  if (allFilled && documentPreview) {
+    return (
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 rounded-t-lg flex items-center justify-between mb-8">
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => navigate('/upload')}
+              className="p-2 hover:bg-blue-700 rounded-lg transition-colors"
+              title="Back to upload"
+            >
+              <ArrowLeft className="w-5 h-5 text-white" />
+            </button>
+            <CheckCircle className="w-6 h-6 text-white" />
+            <h2 className="text-xl font-semibold text-white">
+              Document Complete
+            </h2>
+          </div>
+          <div className="flex items-center space-x-2 bg-blue-800 px-3 py-1 rounded-lg">
+            <CheckCircle className="w-4 h-4 text-white" />
+            <span className="text-sm font-medium text-white">All placeholders filled</span>
+          </div>
+        </div>
+
+        {/* Error banner */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+          </div>
+        )}
+
+        {/* Document Preview Section */}
+        <div className="space-y-4">
+          <DocumentPreview documentBlob={documentPreview} />
+          <div className="flex justify-center">
+            <button
+              onClick={handleGenerate}
+              disabled={isGenerating}
+              className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2 shadow-lg"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader className="w-5 h-5 animate-spin" />
+                  <span>Generating document...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-5 h-5" />
+                  <span>Download Completed Document</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show chat interface when not all filled
   return (
     <div className="max-w-5xl mx-auto">
       <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl overflow-hidden">
@@ -146,12 +261,6 @@ export default function ConversationPage() {
               Document Filling Session
             </h2>
           </div>
-          {allFilled && (
-            <div className="flex items-center space-x-2 bg-blue-800 px-3 py-1 rounded-lg">
-              <CheckCircle className="w-4 h-4 text-white" />
-              <span className="text-sm font-medium text-white">All placeholders filled</span>
-            </div>
-          )}
         </div>
 
         {/* Error banner */}
@@ -200,6 +309,7 @@ export default function ConversationPage() {
         <div className="border-t border-slate-200 dark:border-slate-700 p-4 bg-slate-50 dark:bg-slate-900">
           <div className="flex space-x-3">
             <textarea
+              ref={inputRef}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyPress={handleKeyPress}
@@ -217,30 +327,18 @@ export default function ConversationPage() {
               <span>Send</span>
             </button>
           </div>
-
-          {allFilled && (
-            <div className="mt-4 flex justify-center">
-              <button
-                onClick={handleGenerate}
-                disabled={isGenerating}
-                className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2 shadow-lg"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader className="w-5 h-5 animate-spin" />
-                    <span>Generating document...</span>
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-5 h-5" />
-                    <span>Download Completed Document</span>
-                  </>
-                )}
-              </button>
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Loading preview indicator */}
+      {allFilled && isLoadingPreview && (
+        <div className="mt-8 flex items-center justify-center p-8 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+          <div className="text-center">
+            <Loader className="w-8 h-8 mx-auto mb-2 animate-spin text-blue-600" />
+            <p className="text-sm text-slate-600 dark:text-slate-400">Loading document preview...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

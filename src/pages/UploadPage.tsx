@@ -28,7 +28,7 @@ export default function UploadPage() {
       <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-8">
         <div className="mb-8 text-center">
           <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-            Welcome to Lexy
+            Welcome to Lexsy
           </h2>
           <p className="text-lg text-slate-600 dark:text-slate-400">
             Upload your legal document template to get started

@@ -1,6 +1,6 @@
-# Lexy Frontend
+# Lexsy Frontend
 
-A modern React-based frontend for the Lexy legal document assistant application.
+A modern React-based frontend for the Lexsy legal document assistant application.
 
 ## Features
 
@@ -87,14 +87,18 @@ All requests are proxied through Vite's dev server to `http://localhost:8000`
 ## Key Components
 
 ### UploadPage
+
 The initial page where users upload their .docx document template. Features:
+
 - Drag-and-drop interface
 - File validation
 - Loading states
 - Error handling
 
 ### ConversationPage
+
 The main chat interface where users fill in placeholders:
+
 - Message display area
 - Input field with send button
 - Progress indicators
@@ -102,7 +106,9 @@ The main chat interface where users fill in placeholders:
 - Keyboard shortcuts (Enter to send)
 
 ### FileUpload
+
 Reusable component for file selection:
+
 - Drag-and-drop support
 - Click to browse
 - Visual feedback during interactions
@@ -111,6 +117,7 @@ Reusable component for file selection:
 ## Styling
 
 The app uses Tailwind CSS for styling with:
+
 - Responsive design
 - Dark mode support
 - Modern gradient backgrounds
@@ -132,4 +139,3 @@ The app uses Tailwind CSS for styling with:
 - User authentication
 - Document templates library
 - PDF export option
-

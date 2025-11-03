@@ -36,6 +36,14 @@ export const documentApi = {
     
     return response.data;
   },
+
+  getPreview: async (request: GenerateDocumentRequest): Promise<Blob> => {
+    const response = await api.post('/documents/generate', request, {
+      responseType: 'blob',
+    });
+    
+    return response.data;
+  },
 };
 
 export const placeholderApi = {
