@@ -9,7 +9,7 @@ import type {
 } from '../types';
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -19,13 +19,13 @@ export const documentApi = {
   upload: async (file: File): Promise<UploadResponse> => {
     const formData = new FormData();
     formData.append('file', file);
-    
+
     const response = await api.post('/documents/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-    
+
     return response.data;
   },
 
@@ -33,7 +33,7 @@ export const documentApi = {
     const response = await api.post('/documents/generate', request, {
       responseType: 'blob',
     });
-    
+
     return response.data;
   },
 
@@ -41,7 +41,7 @@ export const documentApi = {
     const response = await api.post('/documents/generate', request, {
       responseType: 'blob',
     });
-    
+
     return response.data;
   },
 };
