@@ -7,7 +7,6 @@ A modern React-based frontend for the Lexsy legal document assistant application
 - **Document Upload**: Drag-and-drop or click to upload .docx legal document templates
 - **AI-Powered Parsing**: Automatically identifies dynamic placeholders in documents
 - **Conversational Interface**: Chat-based experience to fill in document placeholders
-- **Real-time Progress**: Visual indicators showing completion status
 - **Document Generation**: Download completed documents as .docx files
 
 ## Tech Stack
@@ -25,7 +24,7 @@ A modern React-based frontend for the Lexsy legal document assistant application
 ### Prerequisites
 
 - Node.js 18+ and npm/yarn
-- Backend server running on `http://localhost:8000`
+- Backend server running locally on 8000 port
 
 ### Installation
 
@@ -48,7 +47,6 @@ The app will be available at `http://localhost:3000`
 npm run build
 ```
 
-The production build will be in the `dist` directory.
 
 ## Project Structure
 
@@ -82,7 +80,6 @@ The frontend communicates with the backend API through:
 - `POST /api/placeholders/continue` - Continue the conversation
 - `POST /api/documents/generate` - Generate the filled document
 
-All requests are proxied through Vite's dev server to `http://localhost:8000`
 
 ## Key Components
 
@@ -114,28 +111,3 @@ Reusable component for file selection:
 - Visual feedback during interactions
 - Loading states
 
-## Styling
-
-The app uses Tailwind CSS for styling with:
-
-- Responsive design
-- Dark mode support
-- Modern gradient backgrounds
-- Smooth transitions and animations
-- Accessible color schemes
-
-## Browser Support
-
-- Chrome (latest)
-- Firefox (latest)
-- Safari (latest)
-- Edge (latest)
-
-## Future Enhancements
-
-- Document preview before download
-- Placeholder editing history
-- Multiple document templates
-- User authentication
-- Document templates library
-- PDF export option
