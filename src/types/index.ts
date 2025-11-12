@@ -20,9 +20,11 @@ export interface UploadResponse {
 
 export interface StartSessionResponse {
   success: boolean;
-  thread_id: string;
+  session_id?: string;
+  thread_id?: string;
   conversation: ConversationMessage[];
   all_filled: boolean;
+  message?: string;
 }
 
 export interface ContinueSessionResponse {
@@ -43,8 +45,9 @@ export interface StartSessionRequest {
 }
 
 export interface ContinueSessionRequest {
-  document_id: string;
-  thread_id: string;
+  document_id?: string;
+  session_id?: string;
+  thread_id?: string;
   message: string;
 }
 

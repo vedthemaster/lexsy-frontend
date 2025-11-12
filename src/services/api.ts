@@ -53,7 +53,16 @@ export const placeholderApi = {
   },
 
   continueSession: async (request: ContinueSessionRequest, version: 'v1' | 'v2' = 'v1'): Promise<ContinueSessionResponse> => {
-    const response = await api.post(`/${version}/placeholders/continue`, request);
+    const payload = version === 'v2'
+      ? { session_id: request.session_id || request.thread_id, message: request.message }
+      : { document_id: request.document_id, thread_id: request.thread_id, message: request.message };
+
+    const response = await api.post(`/${version}/placeholders/continue`, payload);
+    return response.data;
+  },
+
+  getStatus: async (sessionId: string, version: 'v1' | 'v2' = 'v2'): Promise<any> => {
+    const response = await api.post(`/${version}/placeholders/status`, { session_id: sessionId });
     return response.data;
   },
 };

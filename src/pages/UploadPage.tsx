@@ -123,7 +123,7 @@ export default function UploadPage() {
                       ? 'bg-purple-500 text-white'
                       : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
                       }`}>
-                      Coming Soon
+                      Agent-Based
                     </span>
                   </div>
                 </div>

@@ -13,7 +13,7 @@ export default function ConversationPage() {
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isStarting, setIsStarting] = useState(true);
-  const [threadId, setThreadId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [allFilled, setAllFilled] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,15 +70,21 @@ export default function ConversationPage() {
 
     try {
       const response = await placeholderApi.startSession({ document_id: documentId }, apiVersion);
-      setThreadId(response.thread_id);
-      setConversation(response.conversation);
-      setAllFilled(response.all_filled);
+      console.log('Start session response:', response);
+      console.log('API version:', apiVersion);
 
-      // If all placeholders are already filled, load preview immediately
+      const id = response.session_id || response.thread_id;
+      setSessionId(id || null);
+
+      // Ensure conversation is always an array
+      const conversationData = response.conversation || [];
+      console.log('Conversation data:', conversationData);
+      setConversation(conversationData);
+      setAllFilled(response.all_filled || false);
+
       if (response.all_filled && documentId) {
         loadDocumentPreview();
       } else {
-        // Focus input when session starts if not all filled
         setTimeout(() => {
           inputRef.current?.focus();
         }, 100);
@@ -92,7 +98,7 @@ export default function ConversationPage() {
   };
 
   const sendMessage = async () => {
-    if (!message.trim() || !documentId || !threadId || isLoading) return;
+    if (!message.trim() || !documentId || !sessionId || isLoading) return;
 
     const userMessage: ConversationMessage = {
       role: 'user',
@@ -107,7 +113,8 @@ export default function ConversationPage() {
     try {
       const response = await placeholderApi.continueSession({
         document_id: documentId,
-        thread_id: threadId,
+        session_id: sessionId,
+        thread_id: sessionId,
         message: userMessage.content,
       }, apiVersion);
 
@@ -115,12 +122,10 @@ export default function ConversationPage() {
       const wasFilled = allFilled;
       setAllFilled(response.all_filled);
 
-      // If all placeholders just became filled, trigger preview load
       if (!wasFilled && response.all_filled && documentId && !documentPreview && !isLoadingPreview) {
         loadDocumentPreview();
       }
 
-      // Focus input after processing if not all filled
       if (!response.all_filled) {
         setTimeout(() => {
           inputRef.current?.focus();
@@ -129,7 +134,6 @@ export default function ConversationPage() {
     } catch (err) {
       console.error('Send message error:', err);
       setError(err instanceof Error ? err.message : 'Failed to send message. Please try again.');
-      // Focus input even on error
       setTimeout(() => {
         inputRef.current?.focus();
       }, 100);
@@ -292,8 +296,8 @@ export default function ConversationPage() {
               >
                 <div
                   className={`max-w-[80%] rounded-lg px-4 py-3 ${msg.role === 'user'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white'
                     }`}
                 >
                   <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
