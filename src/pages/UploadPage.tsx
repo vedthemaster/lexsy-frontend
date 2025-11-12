@@ -92,10 +92,10 @@ export default function UploadPage() {
                 Uses OpenAI's function calling capabilities for direct placeholder extraction and conversational filling.
               </p>
               <ul className="text-xs text-slate-600 dark:text-slate-400 space-y-1">
-                <li>• Fast and efficient placeholder detection</li>
+                <li>• Easy to set up and configure</li>
                 <li>• Direct OpenAI Assistant integration</li>
-                <li>• Proven and stable approach</li>
-                <li>• Real-time conversational experience</li>
+                <li>• Relies on OpenAI's proven features</li>
+                <li>• Takes more time to process responses</li>
               </ul>
             </button>
 
