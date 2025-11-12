@@ -8,18 +8,19 @@ import type { ConversationMessage } from '../types';
 export default function ConversationPage() {
   const { documentId } = useParams<{ documentId: string }>();
   const navigate = useNavigate();
-  
+
   const [conversation, setConversation] = useState<ConversationMessage[]>([]);
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isStarting, setIsStarting] = useState(true);
-  const [threadId, setThreadId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [allFilled, setAllFilled] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [documentPreview, setDocumentPreview] = useState<Blob | null>(null);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
-  
+  const apiVersion = (sessionStorage.getItem('apiVersion') as 'v1' | 'v2') || 'v1';
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -37,8 +38,8 @@ export default function ConversationPage() {
     }
   }, [documentId]);
 
-    useEffect(() => {
-    if (allFilled && documentId && !documentPreview && !isLoadingPreview) {     
+  useEffect(() => {
+    if (allFilled && documentId && !documentPreview && !isLoadingPreview) {
       loadDocumentPreview();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -51,11 +52,11 @@ export default function ConversationPage() {
     setError(null);
 
     try {
-      const blob = await documentApi.getPreview({ document_id: documentId });   
+      const blob = await documentApi.getPreview({ document_id: documentId }, apiVersion);
       setDocumentPreview(blob);
     } catch (err) {
       console.error('Preview load error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load document preview. Please try again.');                                                      
+      setError(err instanceof Error ? err.message : 'Failed to load document preview. Please try again.');
     } finally {
       setIsLoadingPreview(false);
     }
@@ -63,21 +64,27 @@ export default function ConversationPage() {
 
   const startSession = async () => {
     if (!documentId) return;
-    
+
     setIsStarting(true);
     setError(null);
-    
+
     try {
-      const response = await placeholderApi.startSession({ document_id: documentId });
-      setThreadId(response.thread_id);
-      setConversation(response.conversation);
-      setAllFilled(response.all_filled);
-      
-      // If all placeholders are already filled, load preview immediately
+      const response = await placeholderApi.startSession({ document_id: documentId }, apiVersion);
+      console.log('Start session response:', response);
+      console.log('API version:', apiVersion);
+
+      const id = response.session_id || response.thread_id;
+      setSessionId(id || null);
+
+      // Ensure conversation is always an array
+      const conversationData = response.conversation || [];
+      console.log('Conversation data:', conversationData);
+      setConversation(conversationData);
+      setAllFilled(response.all_filled || false);
+
       if (response.all_filled && documentId) {
         loadDocumentPreview();
       } else {
-        // Focus input when session starts if not all filled
         setTimeout(() => {
           inputRef.current?.focus();
         }, 100);
@@ -91,7 +98,7 @@ export default function ConversationPage() {
   };
 
   const sendMessage = async () => {
-    if (!message.trim() || !documentId || !threadId || isLoading) return;
+    if (!message.trim() || !documentId || !sessionId || isLoading) return;
 
     const userMessage: ConversationMessage = {
       role: 'user',
@@ -106,20 +113,19 @@ export default function ConversationPage() {
     try {
       const response = await placeholderApi.continueSession({
         document_id: documentId,
-        thread_id: threadId,
+        session_id: sessionId,
+        thread_id: sessionId,
         message: userMessage.content,
-      });
+      }, apiVersion);
 
       setConversation(response.conversation);
       const wasFilled = allFilled;
       setAllFilled(response.all_filled);
-      
-      // If all placeholders just became filled, trigger preview load
+
       if (!wasFilled && response.all_filled && documentId && !documentPreview && !isLoadingPreview) {
         loadDocumentPreview();
       }
-      
-      // Focus input after processing if not all filled
+
       if (!response.all_filled) {
         setTimeout(() => {
           inputRef.current?.focus();
@@ -128,7 +134,6 @@ export default function ConversationPage() {
     } catch (err) {
       console.error('Send message error:', err);
       setError(err instanceof Error ? err.message : 'Failed to send message. Please try again.');
-      // Focus input even on error
       setTimeout(() => {
         inputRef.current?.focus();
       }, 100);
@@ -144,8 +149,8 @@ export default function ConversationPage() {
     setError(null);
 
     try {
-      const blob = await documentApi.generate({ document_id: documentId });
-      
+      const blob = await documentApi.generate({ document_id: documentId }, apiVersion);
+
       // Create download link
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -160,7 +165,7 @@ export default function ConversationPage() {
       setError(err instanceof Error ? err.message : 'Failed to generate document. Please try again.');
     } finally {
       setIsGenerating(false);
-        }
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -201,6 +206,9 @@ export default function ConversationPage() {
             <h2 className="text-xl font-semibold text-white">
               Document Complete
             </h2>
+            <span className="text-xs bg-blue-800 px-2 py-1 rounded uppercase font-semibold">
+              {apiVersion}
+            </span>
           </div>
           <div className="flex items-center space-x-2 bg-blue-800 px-3 py-1 rounded-lg">
             <CheckCircle className="w-4 h-4 text-white" />
@@ -260,6 +268,9 @@ export default function ConversationPage() {
             <h2 className="text-xl font-semibold text-white">
               Document Filling Session
             </h2>
+            <span className="text-xs bg-blue-800 px-2 py-1 rounded uppercase font-semibold">
+              {apiVersion}
+            </span>
           </div>
         </div>
 
@@ -284,11 +295,10 @@ export default function ConversationPage() {
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-lg px-4 py-3 ${
-                    msg.role === 'user'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white'
-                  }`}
+                  className={`max-w-[80%] rounded-lg px-4 py-3 ${msg.role === 'user'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white'
+                    }`}
                 >
                   <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
                 </div>
