@@ -8,12 +8,26 @@ import type {
   GenerateDocumentRequest,
 } from '../types';
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+// Health check to wake up Railway service
+export const wakeUpService = async (): Promise<void> => {
+  try {
+    // Remove /api suffix if present to hit the root health endpoint
+    const healthUrl = BASE_URL.replace(/\/api\/?$/, '') + '/health';
+    await axios.get(healthUrl);
+    console.log('Backend service is awake');
+  } catch (error) {
+    console.log('Backend warming up...');
+  }
+};
 
 export const documentApi = {
   upload: async (file: File, version: 'v1' | 'v2' = 'v1'): Promise<UploadResponse> => {
